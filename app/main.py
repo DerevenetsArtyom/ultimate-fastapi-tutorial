@@ -1,9 +1,15 @@
-from fastapi import FastAPI, APIRouter, Query, HTTPException
+from fastapi import FastAPI, APIRouter, Query, HTTPException, Request
+from fastapi.templating import Jinja2Templates
 
-from typing import Optional
+from typing import Optional, Any
+from pathlib import Path
 
 from app.schemas import RecipeSearchResults, Recipe, RecipeCreate
 from app.recipe_data import RECIPES
+
+
+BASE_PATH = Path(__file__).resolve().parent
+TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 
 app = FastAPI(title="Recipe API")
@@ -12,14 +18,17 @@ api_router = APIRouter()
 
 
 @api_router.get("/", status_code=200)
-def root() -> dict:
+def root(request: Request) -> dict:
     """Root GET."""
 
-    return {"msg": "Hello, World!"}
+    return TEMPLATES.TemplateResponse(
+        "index.html",
+        {"request": request, "recipes": RECIPES}
+    )
 
 
 @api_router.get("/recipe/{recipe_id}", status_code=200, response_model=Recipe)
-def fetch_recipe(*, recipe_id: int) -> dict:
+def fetch_recipe(*, recipe_id: int) -> Any:
     """Fetch a single recipe by ID."""
 
     result = [recipe for recipe in RECIPES if recipe["id"] == recipe_id]
