@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Query
+from fastapi import FastAPI, APIRouter, Query, HTTPException
 
 from typing import Optional
 
@@ -23,8 +23,11 @@ def fetch_recipe(*, recipe_id: int) -> dict:
     """Fetch a single recipe by ID."""
 
     result = [recipe for recipe in RECIPES if recipe["id"] == recipe_id]
-    if result:
-        return result[0]
+    if not result:
+        # the exception is raised, not returned - you will get a validation error otherwise.
+        raise HTTPException(status_code=404, detail=f"Recipe with ID {recipe_id} not found")
+
+    return result[0]
 
 
 @api_router.get("/search/", status_code=200, response_model=RecipeSearchResults)
