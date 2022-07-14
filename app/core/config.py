@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     DATABASE_URI: Optional[str] = "sqlite:///example.db"
     FIRST_SUPERUSER: EmailStr = "admin@recipeapi.com"
+    FIRST_SUPERUSER_PW: str = "CHANGEME"
 
     class Config:
         case_sensitive = True
