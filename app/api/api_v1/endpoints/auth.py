@@ -38,3 +38,11 @@ def login(*, db: Session = Depends(deps.get_db), form_data: OAuth2PasswordReques
         "access_token": create_access_token(sub=str(user.id)),
         "token_type": "bearer",
     }
+
+
+@router.get("/me", response_model=schemas.User)
+def read_users_me(current_user: User = Depends(deps.get_current_user)):
+    """Fetch the current logged in user."""
+
+    user = current_user
+    return user
