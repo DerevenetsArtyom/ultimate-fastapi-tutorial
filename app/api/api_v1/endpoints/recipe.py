@@ -5,12 +5,13 @@ from sqlalchemy.orm import Session
 
 from app import crud
 from app.api import deps
-from app.schemas.recipe import Recipe, RecipeCreate, RecipeSearchResults
+from app.schemas.recipe import Recipe, RecipeCreate, RecipeSearchResults, RecipeUpdateRestricted
+from app.models.user import User
 
 router = APIRouter()
 
 
-@router.get("/recipe/{recipe_id}", status_code=200, response_model=Recipe)
+@router.get("/{recipe_id}", status_code=200, response_model=Recipe)
 def fetch_recipe(*, recipe_id: int, db: Session = Depends(deps.get_db)) -> Any:
     """Fetch a single recipe by ID."""
 
@@ -39,8 +40,41 @@ def search_recipes(
     return {"results": list(results)[:max_results]}
 
 
-@router.post("/recipe/", status_code=201, response_model=Recipe)
-def create_recipe(*, recipe_in: RecipeCreate, db: Session = Depends(deps.get_db)) -> dict:
-    """Create a new recipe (in memory only)."""
+@router.post("/", status_code=201, response_model=Recipe)
+def create_recipe(
+    *,
+    recipe_in: RecipeCreate,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user)
+) -> dict:
+    """Create a new recipe in the database."""
+
+    if recipe_in.submitter_id != current_user.id:
+        raise HTTPException(status_code=403, detail=f"You can only submit recipes as yourself")
 
     return crud.recipe.create(db=db, obj_in=recipe_in)
+
+
+@router.put("/", status_code=200, response_model=Recipe)
+def update_recipe(
+    *, 
+    recipe_in: RecipeUpdateRestricted, 
+    db: Session = Depends(deps.get_db), 
+    current_user: User = Depends(deps.get_current_user)
+) -> dict:
+    """Update recipe in the database."""
+
+    recipe = crud.recipe.get(db, _id=recipe_in.id)
+    if not recipe:
+        raise HTTPException(
+            status_code=400, detail=f"Recipe with ID: {recipe_in.id} not found."
+        )
+
+    if recipe.submitter_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail=f"You can only update your recipes."
+        )
+
+    updated_recipe = crud.recipe.update(db=db, db_obj=recipe, obj_in=recipe_in)
+    db.commit()
+    return updated_recipe
