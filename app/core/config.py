@@ -11,7 +11,13 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
     # e.g: '["http://localhost", "http://localhost:4200", "http://localhost:3000"]'
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = [
+        "http://localhost:3000",
+        "http://localhost:8001",
+        "https://fastapi-recipe-app.herokuapp.com"
+    ]
+    # Origins that match this regex OR are in the above list are allowed
+    BACKEND_CORS_ORIGIN_REGEX: Optional[str] = "https.*\\.(netlify.app|herokuapp.com)"
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
