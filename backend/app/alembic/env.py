@@ -17,13 +17,18 @@ fileConfig(config.config_file_name)
 # target_metadata = None
 
 from app.db.base import Base  # noqa
-from app.db.session import DATABASE_URI
+from app.core.config import settings
 
 target_metadata = Base.metadata
 
 
 def get_url():
-    return DATABASE_URI
+    connection_uri = settings.DATABASE_URI
+    # Heroku workaround: https://help.heroku.com/ZKNTJQSK/why-is-sqlalchemy-1-4-x-not-connecting-to-heroku-postgres
+    if connection_uri.startswith("postgres://"):
+        connection_uri =  connection_uri.replace("postgres://", "postgresql://", 1)
+
+    return connection_uri
 
 
 def run_migrations_offline():
