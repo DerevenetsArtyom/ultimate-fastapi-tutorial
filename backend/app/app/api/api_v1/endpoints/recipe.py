@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from app import crud
 from app.api import deps
-from app.schemas.recipe import Recipe, RecipeCreate, RecipeSearchResults, RecipeUpdateRestricted
 from app.models.user import User
+from app.schemas.recipe import Recipe, RecipeCreate, RecipeSearchResults, RecipeUpdateRestricted
 
 router = APIRouter()
 
@@ -21,6 +21,17 @@ def fetch_recipe(*, recipe_id: int, db: Session = Depends(deps.get_db)) -> Any:
         raise HTTPException(status_code=404, detail=f"Recipe with ID {recipe_id} not found")
 
     return result
+
+
+@router.get("/my-recipies/", status_code=200, response_model=RecipeSearchResults)
+def fetch_user_recipes(*, current_user: User = Depends(deps.get_current_user)) -> dict:
+    """Fetch all recipes for a user."""
+
+    recipes = current_user.recipes
+    if not recipes:
+        return {"results": list()}
+
+    return {"results": list(recipes)}
 
 
 @router.get("/search/", status_code=200, response_model=RecipeSearchResults)
@@ -75,6 +86,4 @@ def update_recipe(
             status_code=403, detail=f"You can only update your recipes."
         )
 
-    updated_recipe = crud.recipe.update(db=db, db_obj=recipe, obj_in=recipe_in)
-    db.commit()
-    return updated_recipe
+    return crud.recipe.update(db=db, db_obj=recipe, obj_in=recipe_in)
